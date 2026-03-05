@@ -1,0 +1,5 @@
+{
+  "name": "Uzhavan AI",
+  "description": "Smart Tamil Nadu Farmer Assistant providing AI-powered crop advice, soil monitoring, and pest detection in Tamil and English.",
+  "requestFramePermissions": ["camera"]
+}
