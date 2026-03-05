@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: "AIzaSyCRW3qpn6toZzj-sioX1J4JmFXvulOqeJg" });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 export const SYSTEM_INSTRUCTION = `You are "Uzhavan AI", an expert agricultural scientist specialized in Tamil Nadu's climate, soil conditions (Red, Black, Alluvial, Sandy), and smallholder farming. 
 Your goal is to provide practical, simple, and eco-friendly advice to farmers in Tamil Nadu.

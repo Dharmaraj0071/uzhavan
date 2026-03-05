@@ -1,5 +1,84 @@
 {
-  "name": "Uzhavan AI",
-  "description": "Smart Tamil Nadu Farmer Assistant providing AI-powered crop advice, soil monitoring, and pest detection in Tamil and English.",
-  "requestFramePermissions": ["camera"]
+  moisture: number; // 0–100 %
+  pH: number;
+  temperature: number; // °C
+  district: string;
+  soilType: string;
+  season: string;
+}
+
+interface AdviceResponse {
+  status: 'success' | 'fallback';
+  message: string;
+}
+
+/**
+ * Converts percentage moisture to decimal if needed
+ */
+function normalizeMoisture(moisture: number): number {
+  if (moisture > 1) return moisture / 100; // e.g., 32% -> 0.32
+  return moisture;
+}
+
+/**
+ * Validates the soil data before sending to AI
+ */
+function validateSoilData(data: SoilData): boolean {
+  if (
+    data.moisture == null ||
+    data.pH == null ||
+    data.temperature == null ||
+    !data.district ||
+    !data.soilType ||
+    !data.season
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Generates fallback advice if AI fails
+ */
+function getFallbackAdvice(data: SoilData): string {
+  let advice = 'Basic advice:\n';
+  if (data.moisture < 40) advice += '- Moisture is low: Irrigate within 24 hours.\n';
+  if (data.pH < 6) advice += '- Soil slightly acidic: Consider liming.\n';
+  if (data.temperature > 35) advice += '- Temperature high: Monitor crops closely.\n';
+  if (advice === 'Basic advice:\n') advice += '- Soil conditions seem normal.';
+  return advice;
+}
+
+/**
+ * Fetch advice from Gemini AI
+ */
+export async function getSoilAdvice(data: SoilData): Promise<AdviceResponse> {
+  if (!validateSoilData(data)) {
+    return { status: 'fallback', message: 'Invalid input data. ' + getFallbackAdvice(data) };
+  }
+
+  // Normalize moisture if needed
+  const normalizedData = { ...data, moisture: normalizeMoisture(data.moisture) };
+
+  try {
+    const response = await fetch('https://YOUR_GEMINI_API_ENDPOINT', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
+      },
+      body: JSON.stringify(normalizedData),
+    });
+
+    if (!response.ok) throw new Error(`AI API error: ${response.status}`);
+
+    const result = await response.json();
+
+    if (!result.advice) throw new Error('AI returned empty advice');
+
+    return { status: 'success', message: result.advice };
+  } catch (err) {
+    console.error('Gemini AI error:', err);
+    return { status: 'fallback', message: getFallbackAdvice(data) };
+  }
 }
